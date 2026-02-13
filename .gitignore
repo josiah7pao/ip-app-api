@@ -1,5 +1,6 @@
 # Logs
 logs
+.DS_Store
 *.log
 npm-debug.log*
 yarn-debug.log*
@@ -134,3 +135,4 @@ dist
 .yarn/build-state.yml
 .yarn/install-state.gz
 .pnp.*
+.vercel

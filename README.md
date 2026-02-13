@@ -41,3 +41,14 @@ Create `.env` (or set in Vercel):
 ```bash
 npm install
 npx vercel dev
+
+## Test Credentials
+
+Use this seeded demo account for testing:
+
+- Email: `test@test.com`
+- Password: `1234`
+
+Notes:
+- This is a non-production demo account for assessment/review only.
+
