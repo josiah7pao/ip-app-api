@@ -159,4 +159,64 @@ app.post("/api/home/search", async (req, res) => {
   }
 });
 
+// Lookup API — fetch info for an IP without inserting into history
+app.post("/api/home/lookup", async (req, res) => {
+  const { ip } = req.body;
+
+  if (!ip) return res.status(400).json({ error: "IP address is required" });
+  if (!net.isIP(ip)) return res.status(400).json({ error: "Invalid IP address format" });
+
+  try {
+    await initDb();
+
+    const token = process.env.IPINFO_TOKEN;
+    const ipInfoUrl = token
+      ? `https://ipinfo.io/${ip}/geo?token=${token}`
+      : `https://ipinfo.io/${ip}/geo`;
+
+    const response = await axios.get(ipInfoUrl);
+    const ipData = response.data;
+
+    return res.json({ message: "IP info fetched", ipData });
+  } catch (err) {
+    console.error(err);
+    return res.status(500).json({ error: "Failed to fetch IP info. Make sure the IP is valid." });
+  }
+});
+
+// Delete selected history rows by ID
+app.delete("/api/home/history", async (req, res) => {
+  const { ids } = req.body;
+
+  if (!Array.isArray(ids) || ids.length === 0) {
+    return res.status(400).json({ error: "At least one history item must be selected" });
+  }
+
+  const parsedIds = ids
+    .map((id) => Number(id))
+    .filter((id) => Number.isInteger(id) && id > 0);
+
+  if (parsedIds.length === 0) {
+    return res.status(400).json({ error: "Invalid history IDs" });
+  }
+
+  try {
+    await initDb();
+
+    await pool.query("DELETE FROM ip_history WHERE id = ANY($1::int[])", [parsedIds]);
+
+    const historyResult = await pool.query(
+      "SELECT id, ip_address, created_at FROM ip_history ORDER BY created_at DESC"
+    );
+
+    return res.json({
+      message: "Selected history items deleted",
+      ip_history: historyResult.rows,
+    });
+  } catch (err) {
+    console.error(err);
+    return res.status(500).json({ error: "Failed to delete selected history items" });
+  }
+});
+
 module.exports = app;
